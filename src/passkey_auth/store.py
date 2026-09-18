@@ -55,3 +55,7 @@ class InMemoryCredentialStore:
         if existing is None:
             raise KeyError(f"credential not found: {credential_id!r}")
         self._credentials[credential_id] = dataclasses.replace(existing, sign_count=sign_count)
+
+    def clear(self) -> None:
+        """保持している全クレデンシャルを削除する（テストでの分離用）。"""
+        self._credentials.clear()

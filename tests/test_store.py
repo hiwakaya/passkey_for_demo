@@ -62,3 +62,11 @@ def test_update_sign_count_raises_for_unknown_credential() -> None:
     store = InMemoryCredentialStore()
     with pytest.raises(KeyError):
         store.update_sign_count(b"missing", 1)
+
+
+def test_clear_removes_all_credentials() -> None:
+    store = InMemoryCredentialStore()
+    store.save(_credential(b"cred-1"))
+    store.save(_credential(b"cred-2"))
+    store.clear()
+    assert store.list_all() == []
