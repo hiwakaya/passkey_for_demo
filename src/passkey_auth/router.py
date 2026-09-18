@@ -15,6 +15,7 @@ from typing import Any, Protocol
 from fastapi import APIRouter, HTTPException, Response
 from pydantic import BaseModel
 from webauthn.helpers import base64url_to_bytes, bytes_to_base64url
+from webauthn.helpers.structs import AuthenticatorAttachment
 
 from passkey_auth.ceremony import (
     RelyingParty,
@@ -88,6 +89,7 @@ def build_router(
     claims_for_user: Callable[[str], dict[str, Any]] | None = None,
     prefix: str = "/passkey",
     cookie_name: str | None = None,
+    authenticator_attachment: AuthenticatorAttachment | None = AuthenticatorAttachment.PLATFORM,
 ) -> APIRouter:
     """パスキー登録・ログインのAPIRouterを組み立てる。
 
@@ -97,6 +99,9 @@ def build_router(
       トークンを設定する（同一プロセスにマウントするFastAPI+Jinja2構成向け）。
       指定しない場合はレスポンスJSONの`access_token`のみを返す（別プロセス・
       別オリジンへのトークン受け渡し構成向け。`CLAUDE.md`等の各デモが方式を選ぶ）。
+    - `authenticator_attachment`：既定値`PLATFORM`は登録時、端末内蔵の認証器
+      （Windows Hello・Touch ID等）のみを候補にする。共有端末でのデモ等、USBセキュリティ
+      キーも許可したい場合は`None`を渡す。
     """
     gate = registration_gate or AllowAllRegistrationGate()
     router = APIRouter(prefix=prefix, tags=["passkey-auth"])
@@ -110,7 +115,10 @@ def build_router(
         ):
             raise HTTPException(status_code=403, detail="登録が許可されていません。")
         options_json, challenge = generate_registration_options(
-            rp, user_id=req.user_id, display_name=req.display_name
+            rp,
+            user_id=req.user_id,
+            display_name=req.display_name,
+            authenticator_attachment=authenticator_attachment,
         )
         token = signer.create_challenge_token(bytes_to_base64url(challenge), token_type="reg")
         return {"options": json.loads(options_json), "challenge_token": token}

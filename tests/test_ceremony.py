@@ -38,6 +38,26 @@ def test_generate_registration_options_challenge_is_random_each_call() -> None:
     assert challenge_a != challenge_b
 
 
+def test_generate_registration_options_defaults_to_platform_authenticator() -> None:
+    """既定では`authenticatorAttachment: "platform"`を要求し、ブラウザに端末内蔵の
+
+    認証器（Windows Hello・Touch ID等）のみを候補として提示させる（USBセキュリティ
+    キー等の外部認証器は選択肢から外れる）。
+    """
+    options_json, _ = generate_registration_options(_RP, user_id="u1", display_name="A")
+    options = json.loads(options_json)
+    assert options["authenticatorSelection"]["authenticatorAttachment"] == "platform"
+
+
+def test_generate_registration_options_can_allow_any_authenticator() -> None:
+    """`authenticator_attachment=None`を渡すと制限を外し、外部認証器も許可する。"""
+    options_json, _ = generate_registration_options(
+        _RP, user_id="u1", display_name="A", authenticator_attachment=None
+    )
+    options = json.loads(options_json)
+    assert "authenticatorAttachment" not in options["authenticatorSelection"]
+
+
 def test_generate_authentication_options_lists_allowed_credentials() -> None:
     options_json, challenge = generate_authentication_options(
         _RP, credential_ids=[b"cred-1", b"cred-2"]

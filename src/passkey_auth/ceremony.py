@@ -17,6 +17,7 @@ from webauthn.helpers.cose import COSEAlgorithmIdentifier
 from webauthn.helpers.structs import (
     AuthenticationCredential,
     AuthenticatorAssertionResponse,
+    AuthenticatorAttachment,
     AuthenticatorAttestationResponse,
     AuthenticatorSelectionCriteria,
     PublicKeyCredentialDescriptor,
@@ -38,15 +39,26 @@ class RelyingParty:
 
 
 def generate_registration_options(
-    rp: RelyingParty, *, user_id: str, display_name: str
+    rp: RelyingParty,
+    *,
+    user_id: str,
+    display_name: str,
+    authenticator_attachment: AuthenticatorAttachment | None = AuthenticatorAttachment.PLATFORM,
 ) -> tuple[str, bytes]:
-    """パスキー登録オプションを生成する。`(options_json, challenge_bytes)`を返す。"""
+    """パスキー登録オプションを生成する。`(options_json, challenge_bytes)`を返す。
+
+    `authenticator_attachment`の既定値`PLATFORM`は、端末内蔵の認証器（Windows Hello・
+    Touch ID等）のみを候補とし、USBセキュリティキー等の外部（`CROSS_PLATFORM`）認証器を
+    選択肢から外す（ブラウザの選択ダイアログを経ずに済み、UXが簡潔になる）。共有端末での
+    利用等、外部認証器を許可したいデモは`None`を渡す（`webauthn`側の既定＝両方許可）。
+    """
     options = webauthn.generate_registration_options(
         rp_id=rp.id,
         rp_name=rp.name,
         user_id=user_id.encode(),
         user_name=display_name,
         authenticator_selection=AuthenticatorSelectionCriteria(
+            authenticator_attachment=authenticator_attachment,
             resident_key=ResidentKeyRequirement.PREFERRED,
             user_verification=UserVerificationRequirement.PREFERRED,
         ),

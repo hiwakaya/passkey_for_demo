@@ -7,7 +7,7 @@ GLAVIS の複数の自治体AIデモ（`child_allowance`／`child_benefit` 等�
 
 ## 特徴
 
-- **パスワードレス**：職員はパスキー（Windows Hello・Touch ID・セキュリティキー等）でログインする。
+- **パスワードレス**：職員はパスキー（既定では端末内蔵の認証器＝Windows Hello・Touch ID等）でログインする。
 - **ステートレスなセッション**：JWTのみでセッションを表現し、サーバー側セッションストアを持たない。
   そのため以下の両方の構成で同じ実装を再利用できる。
   - 各デモのFastAPIアプリへ`APIRouter`として直接マウントする構成（同一プロセス）
@@ -115,6 +115,11 @@ def dashboard(session: dict = Depends(current_session)):
   デモ既定値のまま本番相当の環境で使わないこと。
 - **`sign_count`によるリプレイ対策**：認証のたびに`CredentialStore.update_sign_count`を呼び、
   認証器側のカウンタと突き合わせる（`webauthn`ライブラリが検証する）。
+- **端末内蔵の認証器（Windows Hello等）を既定にする**：`build_router(..., authenticator_attachment=...)`
+  の既定値`AuthenticatorAttachment.PLATFORM`により、登録時ブラウザはWindows Hello・Touch ID等の
+  端末内蔵認証器のみを候補にする（USBセキュリティキー等の外部認証器は選択肢から外れ、
+  ブラウザの選択ダイアログを経ずに済む）。共有端末でのデモ等、外部認証器も許可したい場合は
+  `authenticator_attachment=None`を渡す。
 
 ## 開発
 
